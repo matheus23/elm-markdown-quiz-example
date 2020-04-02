@@ -12,7 +12,7 @@
 # What is the answer to Life, the Universe and Everything?
 
 Come on. You know this one:
-<answers>
+<answers id="the-answer">
 * [ ] It probably depends.
 * [ ] There is no answer.
 * [ ] Uuugh. I've heard that too often.

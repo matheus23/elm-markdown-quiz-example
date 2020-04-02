@@ -32,6 +32,8 @@ import Pages.Platform exposing (Page)
 import Pages.StaticHttp as StaticHttp
 import Palette
 import QuizMarkdownRenderer
+import Set
+import Types exposing (..)
 
 
 manifest : Manifest.Config Pages.PathKey
@@ -51,7 +53,7 @@ manifest =
 
 
 type alias Rendered =
-    Element Msg
+    Model -> Element Msg
 
 
 
@@ -69,7 +71,7 @@ main =
         , documents = [ markdownDocument ]
         , manifest = manifest
         , canonicalSiteUrl = canonicalSiteUrl
-        , onPageChange = \_ -> ()
+        , onPageChange = \_ -> NoOp
         , generateFiles = generateFiles
         , internals = Pages.internals
         }
@@ -104,28 +106,24 @@ markdownDocument =
                 markdownBody
                     |> Markdown.parse
                     |> Result.mapError (List.map Markdown.deadEndToString >> String.join "\n")
-                    |> Result.andThen (Markdown.render QuizMarkdownRenderer.renderer)
-                    |> Result.map (Element.paragraph [])
+                    |> Result.andThen QuizMarkdownRenderer.render
         }
-
-
-type alias Model =
-    {}
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model, Cmd.none )
-
-
-type alias Msg =
-    ()
+    ( { revealedQuizzes = Set.empty }, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        () ->
+        RevealQuiz id ->
+            ( { model | revealedQuizzes = Set.insert id model.revealedQuizzes }
+            , Cmd.none
+            )
+
+        NoOp ->
             ( model, Cmd.none )
 
 
@@ -179,7 +177,7 @@ pageView model siteMetadata page viewForPage =
                     , Element.spacing 60
                     , Element.Region.mainContent
                     ]
-                    [ viewForPage
+                    [ viewForPage model
                     ]
                 ]
                     |> Element.textColumn
@@ -214,7 +212,7 @@ pageView model siteMetadata page viewForPage =
                             :: (publishedDateView metadata |> Element.el [ Font.size 16, Font.color (Element.rgba255 0 0 0 0.6) ])
                             :: Palette.blogHeading metadata.title
                             :: articleImageView metadata.image
-                            :: [ viewForPage ]
+                            :: [ viewForPage model ]
                         )
                     ]
             }
@@ -235,7 +233,7 @@ pageView model siteMetadata page viewForPage =
                         ]
                         [ Palette.blogHeading author.name
                         , Author.view [] author
-                        , Element.paragraph [ Element.centerX, Font.center ] [ viewForPage ]
+                        , Element.paragraph [ Element.centerX, Font.center ] [ viewForPage model ]
                         ]
                     ]
             }
