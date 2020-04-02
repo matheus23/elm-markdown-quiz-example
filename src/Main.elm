@@ -17,6 +17,8 @@ import Html.Attributes as Attr
 import Index
 import Json.Decode
 import Markdown
+import Markdown.Parser as Markdown
+import Markdown.Renderer as Markdown
 import Metadata exposing (Metadata)
 import MySitemap
 import Pages exposing (images, pages)
@@ -29,6 +31,7 @@ import Pages.PagePath as PagePath exposing (PagePath)
 import Pages.Platform exposing (Page)
 import Pages.StaticHttp as StaticHttp
 import Palette
+import QuizMarkdownRenderer
 
 
 manifest : Manifest.Config Pages.PathKey
@@ -98,11 +101,11 @@ markdownDocument =
         , metadata = Metadata.decoder
         , body =
             \markdownBody ->
-                Html.div [] [ Markdown.toHtml [] markdownBody ]
-                    |> Element.html
-                    |> List.singleton
-                    |> Element.paragraph [ Element.width Element.fill ]
-                    |> Ok
+                markdownBody
+                    |> Markdown.parse
+                    |> Result.mapError (List.map Markdown.deadEndToString >> String.join "\n")
+                    |> Result.andThen (Markdown.render QuizMarkdownRenderer.renderer)
+                    |> Result.map (Element.paragraph [])
         }
 
 
